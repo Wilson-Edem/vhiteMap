@@ -1,0 +1,60 @@
+/* src/styles/global.css */
+
+:root {
+  /* Default Dark Theme */
+  --bg-primary: #12121c;
+  --bg-secondary: #1a1a2e;
+  --bg-card: #1e1e2f;
+  --bg-input: #14141e;
+  --text-primary: #f0f0f0;
+  --text-secondary: #aaa;
+  --border-color: #2a2a3e;
+  --shadow-color: rgba(0, 0, 0, 0.6);
+  --gradient-start: #00d4ff;
+  --gradient-end: #7b2ffc;
+}
+
+/* Light Theme Override */
+[data-theme="light"] {
+  --bg-primary: #f4f6f9;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-input: #f0f2f5;
+  --text-primary: #1a1a2e;
+  --text-secondary: #555;
+  --border-color: #d1d5db;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --gradient-start: #00b4d8;
+  --gradient-end: #6c2bd9;
+}
+
+/* Apply variables to everything */
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Override Leaflet tile background to match theme */
+.leaflet-container {
+  background: var(--bg-secondary) !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gradient-end);
+  border-radius: 10px;
+}

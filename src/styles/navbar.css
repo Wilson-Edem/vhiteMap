@@ -1,0 +1,58 @@
+/* Add to src/styles/navbar.css */
+
+.icon-btn {
+  font-size: 18px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+  color: var(--text-secondary);
+}
+
+.icon-btn:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.icon-btn.active-saver {
+  color: #facc15; /* Yellow */
+  background: rgba(250, 204, 21, 0.15);
+}
+
+.battery-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e1e2f;
+  border: 1px solid #facc15;
+  border-radius: 12px;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 3000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  color: var(--text-primary);
+  max-width: 90%;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.battery-toast button {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.battery-toast button:first-of-type {
+  background: #facc15;
+  color: #000;
+}
+.battery-toast button:last-of-type {
+  background: #4b5563;
+  color: #fff;
+}
