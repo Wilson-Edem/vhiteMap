@@ -63,18 +63,18 @@ const LiveMap = ({ position, error, isDevView = false, trail = [] }) => {
   const markerIcon = createArrowIcon(heading || 0);
 
   return (
-    <div style={{ height: "100%", width: "100%", minHeight: "400px" }}>
-      <MapContainer
-        center={[lat, lng]}
-        zoom={18}
-        style={{ height: "100%", width: "100%", minHeight: "400px" }}
-        zoomControl={false}
-        attributionControl={false}
-      >
+   <div style={{ height: "460px", width: "100%" }}>
+  <MapContainer
+    center={[lat, lng]}
+    zoom={18}
+    style={{ height: "460px", width: "100%" }}
+    zoomControl={false}
+    attributionControl={false}
+  >
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        />
+  url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB'
+/>
         {/* 🧭 Trail Polyline */}
         {trail.length > 0 && (
           <Polyline
