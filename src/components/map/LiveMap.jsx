@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// 地图模式配置
+// Map mode configurations
 const MAP_TILES = {
   standard: {
     url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
@@ -15,7 +15,7 @@ const MAP_TILES = {
   }
 };
 
-// 地图飞行动画组件
+// Smooth fly-to animation
 const FlyToLocation = ({ position }) => {
   const map = useMap();
   useEffect(() => {
@@ -26,7 +26,7 @@ const FlyToLocation = ({ position }) => {
   return null;
 };
 
-// 创建带方向指示的箭头图标
+// Create rotating arrow marker
 const createArrowIcon = (heading) => {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="44" height="44">
@@ -53,10 +53,9 @@ const LiveMap = ({
   error, 
   isDevView = false, 
   trail = [],
-  mapMode = 'standard' // 'standard' | 'satellite'
+  mapMode = 'standard'
 }) => {
   const defaultCenter = [6.5244, 3.3792];
-  const [map, setMap] = useState(null);
 
   if (error) {
     return (
@@ -90,21 +89,19 @@ const LiveMap = ({
   const tileConfig = MAP_TILES[mapMode] || MAP_TILES.standard;
 
   return (
-
     <MapContainer
       center={[lat, lng]}
       zoom={18}
       style={{ height: "100%", width: "100%" }}
       zoomControl={false}
       attributionControl={true}
-      whenCreated={setMap}
     >
       <TileLayer
         url={tileConfig.url}
         attribution={tileConfig.attribution}
       />
       
-      {/* 轨迹线 */}
+      {/* Trail path */}
       {trail.length > 1 && (
         <Polyline
           positions={trail.map(p => [p.lat, p.lng])}
@@ -116,38 +113,10 @@ const LiveMap = ({
         />
       )}
       
-      {/* 当前位置标记 */}
+      {/* Current location marker */}
       <Marker position={[lat, lng]} icon={markerIcon} />
       <FlyToLocation position={position} />
     </MapContainer>
-
-   <div style={{ height: "460px", width: "100%" }}>
-  <MapContainer
-    center={[lat, lng]}
-    zoom={18}
-    style={{ height: "460px", width: "100%" }}
-    zoomControl={false}
-    attributionControl={false}
-  >
-        <TileLayer
-  url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB'
-/>
-        {/* 🧭 Trail Polyline */}
-        {trail.length > 0 && (
-          <Polyline
-            positions={trail.map((p) => [p.lat, p.lng])}
-            color={trailColor}
-            weight={4}
-            opacity={0.8}
-            dashArray={null}
-          />
-        )}
-        <Marker position={[lat, lng]} icon={markerIcon} ref={markerRef} />
-        <FlyToLocation position={position} />
-      </MapContainer>
-    </div>
-
   );
 };
 
