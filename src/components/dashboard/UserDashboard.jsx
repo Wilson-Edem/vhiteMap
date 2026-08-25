@@ -7,7 +7,7 @@ import LiveMap from "../map/LiveMap";
 import { db } from "../../firebase/config";
 import { doc, updateDoc, collection, addDoc } from "firebase/firestore";
 
-// 统计卡片组件
+// Stat card component
 const StatCard = ({ icon, label, value, subValue }) => (
   <div className="glass rounded-2xl p-4 md:p-5 flex-1 min-w-[80px]">
     <div className="flex items-center gap-2 text-white/50 text-xs md:text-sm font-medium mb-1">
@@ -32,7 +32,7 @@ const UserDashboard = () => {
   const [mapMode, setMapMode] = useState('standard'); // 'standard' | 'satellite'
   const saveTrailTimeoutRef = useRef(null);
 
-  // 保存位置到 Firestore
+  // Save location to Firestore
   const saveLocationToFirebase = useCallback(async (pos) => {
     if (!user) return;
     try {
@@ -56,7 +56,7 @@ const UserDashboard = () => {
     }
   }, [user]);
 
-  // 防抖保存轨迹 (每10秒)
+  // Debounced trail save (every 10 seconds)
   const debouncedSaveTrail = useCallback((pos) => {
     if (saveTrailTimeoutRef.current) clearTimeout(saveTrailTimeoutRef.current);
     saveTrailTimeoutRef.current = setTimeout(() => {
@@ -64,7 +64,7 @@ const UserDashboard = () => {
     }, 10000);
   }, [saveLocationToFirebase]);
 
-  // 更新轨迹状态
+  // Update trail state
   useEffect(() => {
     if (!position) return;
     setTrail(prev => {
@@ -75,7 +75,7 @@ const UserDashboard = () => {
     debouncedSaveTrail(position);
   }, [position, debouncedSaveTrail]);
 
-  // 距离和速度计算
+  // Distance and speed calculations
   useEffect(() => {
     if (!position) return;
     const today = new Date().toDateString();
@@ -116,7 +116,7 @@ const UserDashboard = () => {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-dark">
-      {/* 地图 - 全屏背景 */}
+      {/* Map - full‑screen background */}
       <div className="absolute inset-0 z-0">
         <LiveMap 
           position={position} 
@@ -127,7 +127,7 @@ const UserDashboard = () => {
         />
       </div>
 
-      {/* 顶部状态栏 - 毛玻璃效果 */}
+      {/* Top status bar - frosted‑glass effect */}
       <div className="absolute top-0 left-0 right-0 z-20 p-3 md:p-4 pointer-events-none">
         <div className="glass rounded-2xl p-3 md:p-4 pointer-events-auto">
           <div className="flex items-center justify-between">
@@ -148,10 +148,10 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      {/* 统计卡片 - 底部浮动面板 */}
+      {/* Stats cards - bottom floating panel */}
       <div className="absolute bottom-0 left-0 right-0 z-20 p-3 md:p-4 pointer-events-none">
         <div className="pointer-events-auto space-y-3">
-          {/* 统计卡片行 */}
+          {/* Stats card row */}
           <div className="flex gap-2 md:gap-3 overflow-x-auto pb-1 scrollbar-hide">
             <StatCard 
               icon="📏" 
@@ -179,10 +179,10 @@ const UserDashboard = () => {
             />
           </div>
 
-          {/* 控制按钮行 */}
+          {/* Control button row */}
           <div className="glass rounded-2xl p-3 md:p-4 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              {/* 地图模式切换 */}
+              {/* Map mode toggle */}
               <button
                 onClick={() => setMapMode(m => m === 'standard' ? 'satellite' : 'standard')}
                 className={`px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-medium transition-all ${
@@ -194,7 +194,7 @@ const UserDashboard = () => {
                 {mapMode === 'satellite' ? '🛰️ Satellite' : '🗺️ Map'}
               </button>
               
-              {/* 轨迹切换 */}
+              {/* Trail toggle */}
               <button
                 onClick={toggleShowTrail}
                 className={`px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-medium transition-all ${
@@ -224,5 +224,3 @@ const UserDashboard = () => {
     </div>
   );
 };
-
-export default UserDashboard;
