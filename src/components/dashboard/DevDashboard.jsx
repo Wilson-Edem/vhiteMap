@@ -3,7 +3,6 @@ import { db } from "../../firebase/config";
 import { doc, updateDoc, deleteDoc, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { useFetchUsers } from "../../hooks/useFetchUsers";
 import LiveMap from "../map/LiveMap";
-import "../../styles/dev-dashboard.css";
 
 const DevDashboard = () => {
   const { users, loading, error } = useFetchUsers();
@@ -14,8 +13,9 @@ const DevDashboard = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [userTrail, setUserTrail] = useState([]);
+  const [mapMode, setMapMode] = useState('standard');
 
-  // Fetch trail for selected user
+  // 获取选中用户的轨迹
   useEffect(() => {
     if (!selectedUser) {
       setUserTrail([]);
@@ -31,7 +31,7 @@ const DevDashboard = () => {
           const data = doc.data();
           points.push({ lat: data.lat, lng: data.lng });
         });
-        setUserTrail(points.reverse()); // Reverse to show chronological order
+        setUserTrail(points.reverse());
       } catch (err) {
         console.warn("Failed to fetch trail:", err);
         setUserTrail([]);
@@ -40,9 +40,7 @@ const DevDashboard = () => {
     fetchTrail();
   }, [selectedUser]);
 
-  const handleSelectUser = (user) => {
-    setSelectedUser(user);
-  };
+  const handleSelectUser = (user) => setSelectedUser(user);
 
   const openEditModal = (user) => {
     setEditingUser(user);
@@ -79,66 +77,166 @@ const DevDashboard = () => {
     finally { setActionLoading(false); }
   };
 
-  if (loading) return <div className="dev-loading">Loading users...</div>;
-  if (error) return <div className="dev-error">❌ {error}</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-dark text-white/60">
+        <div className="text-center">
+          <div className="text-2xl mb-3 animate-pulse">👥</div>
+          <p>Loading users...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-dark text-red-400">
+        <div className="text-center">
+          <div className="text-2xl mb-3">❌</div>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="dev-dashboard">
-      <div className="dev-sidebar">
-        <h3 className="dev-sidebar-title">👥 All Users ({users.length})</h3>
-        {users.length === 0 ? <p className="dev-empty">No users registered.</p> : (
-          <ul className="dev-user-list">
-            {users.map((user) => (
-              <li key={user.deviceUID} className={`dev-user-item ${selectedUser?.deviceUID === user.deviceUID ? "active" : ""}`} onClick={() => handleSelectUser(user)}>
-                <span className="dev-user-name">{user.uniqueName}</span>
-                <span className="dev-user-status">{user.lastLocation ? "🟢" : "⚪"}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="dev-main">
-        {selectedUser ? (
-          <>
-            <div className="dev-user-header">
-              <h2>📍 {selectedUser.uniqueName}</h2>
-              <div className="dev-actions">
-                <button className="dev-btn edit" onClick={() => openEditModal(selectedUser)}>✏️ Edit</button>
-                <button className="dev-btn delete" onClick={() => handleDeleteUser(selectedUser)}>🗑️ Delete</button>
-              </div>
-            </div>
-            <div className="dev-user-info">
-              <span>🆔 {selectedUser.deviceUID}</span>
-              <span>📅 Joined: {new Date(selectedUser.createdAt).toLocaleDateString()}</span>
-              {selectedUser.lastLocation && <span>🕒 Last seen: {new Date(selectedUser.lastLocation.timestamp).toLocaleString()}</span>}
-            </div>
-            <div className="dev-map-wrapper">
-              {selectedUser.lastLocation ? (
-                <LiveMap position={selectedUser.lastLocation} error={null} isDevView={true} trail={userTrail} />
-              ) : (
-                <div className="dev-no-location">⚪ No location data yet.</div>
-              )}
-            </div>
-          </>
+    <div className="relative h-screen w-screen overflow-hidden bg-dark">
+      {/* 地图背景 */}
+      <div className="absolute inset-0 z-0">
+        {selectedUser?.lastLocation ? (
+          <LiveMap 
+            position={selectedUser.lastLocation} 
+            error={null} 
+            isDevView={true} 
+            trail={userTrail}
+            mapMode={mapMode}
+          />
         ) : (
-          <div className="dev-select-prompt"><p>👈 Select a user to view their location and trail.</p></div>
+          <div className="flex items-center justify-center h-full bg-dark/90 text-white/40">
+            <div className="text-center">
+              <div className="text-5xl mb-4">👈</div>
+              <p className="text-lg">Select a user from the sidebar</p>
+              <p className="text-sm text-white/20 mt-1">to view their location and trail</p>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Edit Modal */}
+      {/* 侧边栏 - 毛玻璃效果 */}
+      <div className="absolute top-4 left-4 bottom-4 z-20 w-64 md:w-72 pointer-events-none">
+        <div className="glass rounded-2xl h-full overflow-hidden pointer-events-auto flex flex-col">
+          <div className="p-4 border-b border-white/5 flex-shrink-0">
+            <h3 className="text-white font-bold text-sm flex items-center gap-2">
+              <span>👥</span> Users <span className="text-white/40 text-xs font-normal">({users.length})</span>
+            </h3>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-white/10">
+            {users.length === 0 ? (
+              <p className="text-white/30 text-sm text-center py-8">No users registered</p>
+            ) : (
+              users.map((user) => (
+                <button
+                  key={user.deviceUID}
+                  onClick={() => handleSelectUser(user)}
+                  className={`w-full text-left px-3 py-2.5 rounded-xl transition-all text-sm flex items-center justify-between ${
+                    selectedUser?.deviceUID === user.deviceUID 
+                      ? 'bg-white/15 text-white' 
+                      : 'text-white/60 hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                  <span className="font-medium truncate">{user.uniqueName}</span>
+                  <span className="text-xs">
+                    {user.lastLocation ? '🟢' : '⚪'}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 底部控制栏 */}
+      {selectedUser && (
+        <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none">
+          <div className="glass rounded-2xl p-3 md:p-4 pointer-events-auto flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <span className="text-white font-bold text-sm md:text-base">
+                {selectedUser.uniqueName}
+              </span>
+              <span className="text-white/40 text-xs">
+                {selectedUser.lastLocation ? '🟢 Active' : '⚪ Offline'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setMapMode(m => m === 'standard' ? 'satellite' : 'standard')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                  mapMode === 'satellite' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-white/10 text-white/70 hover:bg-white/20'
+                }`}
+              >
+                {mapMode === 'satellite' ? '🛰️ Satellite' : '🗺️ Map'}
+              </button>
+              <button
+                onClick={() => openEditModal(selectedUser)}
+                className="px-3 py-1.5 rounded-xl text-xs font-medium bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-all"
+              >
+                ✏️ Edit
+              </button>
+              <button
+                onClick={() => handleDeleteUser(selectedUser)}
+                className="px-3 py-1.5 rounded-xl text-xs font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all"
+              >
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 编辑弹窗 */}
       {isEditModalOpen && (
-        <div className="edit-modal-overlay" onClick={() => setIsEditModalOpen(false)}>
-          <div className="edit-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>✏️ Edit User: {editingUser?.uniqueName}</h3>
-            <div className="edit-form">
-              <label>Unique Name</label>
-              <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} />
-              <label>4-Digit PIN</label>
-              <input type="password" maxLength="4" inputMode="numeric" value={editPin} onChange={(e) => setEditPin(e.target.value.replace(/\D/g, ""))} />
-              <div className="edit-modal-actions">
-                <button className="dev-btn cancel" onClick={() => setIsEditModalOpen(false)}>Cancel</button>
-                <button className="dev-btn save" onClick={handleEditSave} disabled={actionLoading}>{actionLoading ? "Saving..." : "💾 Save"}</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setIsEditModalOpen(false)}>
+          <div className="glass rounded-2xl p-6 md:p-8 max-w-md w-full pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-white text-xl font-bold mb-4">✏️ Edit User</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-white/60 text-sm block mb-1.5">Unique Name</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-all"
+                  placeholder="Enter name"
+                />
+              </div>
+              <div>
+                <label className="text-white/60 text-sm block mb-1.5">4-Digit PIN</label>
+                <input
+                  type="password"
+                  maxLength="4"
+                  inputMode="numeric"
+                  value={editPin}
+                  onChange={(e) => setEditPin(e.target.value.replace(/\D/g, ""))}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-all"
+                  placeholder="1234"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 transition-all text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditSave}
+                  disabled={actionLoading}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-all text-sm font-medium disabled:opacity-50"
+                >
+                  {actionLoading ? "Saving..." : "💾 Save"}
+                </button>
               </div>
             </div>
           </div>

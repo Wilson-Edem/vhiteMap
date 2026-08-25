@@ -6,24 +6,37 @@ import { haversineDistance } from "../../utils/haversine";
 import LiveMap from "../map/LiveMap";
 import { db } from "../../firebase/config";
 import { doc, updateDoc, collection, addDoc } from "firebase/firestore";
-//import "../../styles/map.css";
+
+// 统计卡片组件
+const StatCard = ({ icon, label, value, subValue }) => (
+  <div className="glass rounded-2xl p-4 md:p-5 flex-1 min-w-[80px]">
+    <div className="flex items-center gap-2 text-white/50 text-xs md:text-sm font-medium mb-1">
+      <span>{icon}</span>
+      <span>{label}</span>
+    </div>
+    <div className="text-white text-xl md:text-2xl font-bold tracking-tight">
+      {value}
+      {subValue && <span className="text-white/40 text-sm font-normal ml-1">{subValue}</span>}
+    </div>
+  </div>
+);
 
 const UserDashboard = () => {
   const { user, tracking } = useAuth();
-  const { batterySaver, showTrail } = useSettings();
+  const { batterySaver, showTrail, toggleShowTrail } = useSettings();
   const { position, error } = useGeolocation(tracking, batterySaver);
   const prevPositionRef = useRef(null);
   const [totalDistance, setTotalDistance] = useState(0);
   const [speed, setSpeed] = useState(0);
   const [trail, setTrail] = useState([]);
+  const [mapMode, setMapMode] = useState('standard'); // 'standard' | 'satellite'
   const saveTrailTimeoutRef = useRef(null);
 
-  // Save location to Firestore (main doc) + Trail to subcollection
+  // 保存位置到 Firestore
   const saveLocationToFirebase = useCallback(async (pos) => {
     if (!user) return;
     try {
       const userRef = doc(db, "devices", user.deviceUID);
-      // Update main doc with last location
       await updateDoc(userRef, {
         lastLocation: {
           lat: pos.lat,
@@ -32,7 +45,6 @@ const UserDashboard = () => {
           timestamp: new Date().toISOString(),
         },
       });
-      // Add trail point to subcollection
       const trailRef = collection(userRef, "trail");
       await addDoc(trailRef, {
         lat: pos.lat,
@@ -40,33 +52,30 @@ const UserDashboard = () => {
         timestamp: new Date().toISOString(),
       });
     } catch (err) {
-      console.warn("Failed to save location/trail:", err);
+      console.warn("Failed to save location:", err);
     }
   }, [user]);
 
-  // Debounced trail saving (every 10 seconds)
+  // 防抖保存轨迹 (每10秒)
   const debouncedSaveTrail = useCallback((pos) => {
     if (saveTrailTimeoutRef.current) clearTimeout(saveTrailTimeoutRef.current);
     saveTrailTimeoutRef.current = setTimeout(() => {
       saveLocationToFirebase(pos);
-    }, 10000); // 10 seconds
+    }, 10000);
   }, [saveLocationToFirebase]);
 
-  // Update trail state and trigger debounced save
+  // 更新轨迹状态
   useEffect(() => {
     if (!position) return;
-    // Add to local trail state (for map rendering)
-    setTrail((prev) => {
+    setTrail(prev => {
       const newTrail = [...prev, { lat: position.lat, lng: position.lng }];
-      // Keep only last 500 points to avoid memory issues
       if (newTrail.length > 500) return newTrail.slice(-500);
       return newTrail;
     });
-    // Debounce save to Firebase
     debouncedSaveTrail(position);
   }, [position, debouncedSaveTrail]);
 
-  // Distance and Speed calculations
+  // 距离和速度计算
   useEffect(() => {
     if (!position) return;
     const today = new Date().toDateString();
@@ -81,7 +90,7 @@ const UserDashboard = () => {
       const prev = prevPositionRef.current;
       const dist = haversineDistance(prev.lat, prev.lng, position.lat, position.lng);
       if (dist > 1) {
-        setTotalDistance((prevTotal) => {
+        setTotalDistance(prevTotal => {
           const newTotal = prevTotal + dist;
           localStorage.setItem("dailyDistance", JSON.stringify({ date: today, distance: newTotal }));
           return newTotal;
@@ -98,7 +107,6 @@ const UserDashboard = () => {
       if (user) {
         const userRef = doc(db, "devices", user.deviceUID);
         updateDoc(userRef, { lastLocation: null }).catch(console.warn);
-        // Optionally clear trail subcollection? We'll skip for now to keep data.
       }
     }
   };
@@ -107,42 +115,111 @@ const UserDashboard = () => {
   const distanceM = totalDistance.toFixed(0);
 
   return (
-    <div className="dashboard-container">
-      <div className="stats-grid">
-        <div className="stat-card">
-          <span className="stat-label">📏 Distance Today</span>
-          <span className="stat-value">{totalDistance > 1000 ? `${distanceKm} km` : `${distanceM} m`}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">🏃 Speed</span>
-          <span className="stat-value">{speed.toFixed(1)} km/h</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">🎯 Accuracy</span>
-          <span className="stat-value">{position?.accuracy?.toFixed(0) || "..."} m</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">🧭 Heading</span>
-          <span className="stat-value">{position?.heading?.toFixed(0) || "0"}°</span>
+    <div className="relative h-screen w-screen overflow-hidden bg-dark">
+      {/* 地图 - 全屏背景 */}
+      <div className="absolute inset-0 z-0">
+        <LiveMap 
+          position={position} 
+          error={error} 
+          isDevView={false} 
+          trail={showTrail ? trail : []}
+          mapMode={mapMode}
+        />
+      </div>
+
+      {/* 顶部状态栏 - 毛玻璃效果 */}
+      <div className="absolute top-0 left-0 right-0 z-20 p-3 md:p-4 pointer-events-none">
+        <div className="glass rounded-2xl p-3 md:p-4 pointer-events-auto">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-white font-bold text-lg md:text-xl tracking-tight">
+                Vhitemaps
+              </span>
+              <span className="text-white/40 text-xs hidden sm:inline">
+                {user?.uniqueName}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-white/60 text-xs md:text-sm">
+                {tracking ? '🟢 Live' : '🔴 Paused'}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
-        <button onClick={handleClearHistory} style={{ padding: "8px 20px", background: "#ef4444", border: "none", borderRadius: "8px", color: "#fff", fontWeight: "600", cursor: "pointer" }}>
-          🗑️ Clear History
-        </button>
-        <span style={{ color: "var(--text-secondary)", fontSize: "13px", alignSelf: "center" }}>
-          {batterySaver ? "🔋 Battery Saver: ON (updates every 15s)" : "⚡ Live Mode (updates every 3s)"}
-        </span>
-      </div>
+      {/* 统计卡片 - 底部浮动面板 */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 p-3 md:p-4 pointer-events-none">
+        <div className="pointer-events-auto space-y-3">
+          {/* 统计卡片行 */}
+          <div className="flex gap-2 md:gap-3 overflow-x-auto pb-1 scrollbar-hide">
+            <StatCard 
+              icon="📏" 
+              label="Distance" 
+              value={totalDistance > 1000 ? distanceKm : distanceM}
+              subValue={totalDistance > 1000 ? 'km' : 'm'}
+            />
+            <StatCard 
+              icon="🏃" 
+              label="Speed" 
+              value={speed.toFixed(1)}
+              subValue="km/h"
+            />
+            <StatCard 
+              icon="🎯" 
+              label="Accuracy" 
+              value={position?.accuracy?.toFixed(0) || '...'}
+              subValue="m"
+            />
+            <StatCard 
+              icon="🧭" 
+              label="Heading" 
+              value={position?.heading?.toFixed(0) || '0'}
+              subValue="°"
+            />
+          </div>
 
-      <div className="map-wrapper">
-        <LiveMap position={position} error={error} isDevView={false} trail={showTrail ? trail : []} />
-      </div>
+          {/* 控制按钮行 */}
+          <div className="glass rounded-2xl p-3 md:p-4 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              {/* 地图模式切换 */}
+              <button
+                onClick={() => setMapMode(m => m === 'standard' ? 'satellite' : 'standard')}
+                className={`px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-medium transition-all ${
+                  mapMode === 'satellite' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-white/10 text-white/70 hover:bg-white/20'
+                }`}
+              >
+                {mapMode === 'satellite' ? '🛰️ Satellite' : '🗺️ Map'}
+              </button>
+              
+              {/* 轨迹切换 */}
+              <button
+                onClick={toggleShowTrail}
+                className={`px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-medium transition-all ${
+                  showTrail 
+                    ? 'bg-emerald-500/30 text-emerald-400 border border-emerald-500/30' 
+                    : 'bg-white/10 text-white/50 hover:bg-white/20'
+                }`}
+              >
+                {showTrail ? '📍 Trail ON' : '📍 Trail OFF'}
+              </button>
+            </div>
 
-      <div className="status-bar">
-        {tracking ? <span className="status-active">🟢 Live Tracking Active</span> : <span className="status-inactive">🔴 Tracking Paused</span>}
-        <span className="status-update">Last update: {position ? "just now" : "waiting..."}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-white/40 text-[10px] md:text-xs">
+                {batterySaver ? '🔋 Saver' : '⚡ Live'}
+              </span>
+              <button
+                onClick={handleClearHistory}
+                className="px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all"
+              >
+                🗑️ Clear
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

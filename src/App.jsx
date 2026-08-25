@@ -11,7 +11,14 @@ function App() {
   const { isDevMode } = useAdmin();
 
   if (isLoading) {
-    return <div style={{ padding: "40px", textAlign: "center", fontFamily: "Arial", color: "#fff" }}>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen bg-dark text-white/60">
+        <div className="text-center">
+          <div className="text-3xl mb-3 animate-pulse">🌍</div>
+          <p>Loading Vhitemaps...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
@@ -19,7 +26,7 @@ function App() {
   }
 
   return (
-    <div style={{ background: "#12121c", minHeight: "100vh", color: "#f0f0f0" }}>
+    <div className="h-screen w-screen overflow-hidden bg-dark">
       <Navbar />
       {isDevMode ? <DevDashboard /> : <UserDashboard />}
     </div>

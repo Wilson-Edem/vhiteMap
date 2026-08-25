@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import "../../styles/login.css";
 
 const LoginModal = () => {
   const { registerUser, loginUser } = useAuth();
-  const [activeTab, setActiveTab] = useState("register"); // "register" | "login"
+  const [activeTab, setActiveTab] = useState("register");
   const [uniqueName, setUniqueName] = useState("");
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,7 +14,6 @@ const LoginModal = () => {
     setError("");
     setLoading(true);
 
-    // Basic validation
     if (uniqueName.trim().length < 2) {
       setError("Name must be at least 2 characters.");
       setLoading(false);
@@ -30,10 +28,8 @@ const LoginModal = () => {
     try {
       if (activeTab === "register") {
         await registerUser(uniqueName.trim(), pin);
-        // User is now logged in → App will auto-switch to Dashboard
       } else {
         await loginUser(uniqueName.trim(), pin);
-        // User is now logged in
       }
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
@@ -43,65 +39,85 @@ const LoginModal = () => {
   };
 
   return (
-    <div className="login-overlay">
-      <div className="login-card">
-        <h1 className="login-title">🌍 Vhitemaps</h1>
-        <p className="login-subtitle">made by vhite</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-dark/95 p-4">
+      <div className="glass rounded-3xl p-8 md:p-10 max-w-md w-full">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-white tracking-tight">
+            🌍 Vhitemaps
+          </h1>
+          <p className="text-white/30 text-sm mt-1 tracking-wider">made by vhite</p>
+        </div>
 
-        {/* Tab Buttons */}
-        <div className="tab-bar">
+        {/* Tab 切换 */}
+        <div className="flex gap-1.5 bg-white/5 rounded-2xl p-1.5 mb-6">
           <button
-            className={`tab-btn ${activeTab === "register" ? "active" : ""}`}
             onClick={() => { setActiveTab("register"); setError(""); }}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeTab === "register" 
+                ? "bg-white/10 text-white" 
+                : "text-white/40 hover:text-white/60"
+            }`}
           >
             📍 Track Me
           </button>
           <button
-            className={`tab-btn ${activeTab === "login" ? "active" : ""}`}
             onClick={() => { setActiveTab("login"); setError(""); }}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeTab === "login" 
+                ? "bg-white/10 text-white" 
+                : "text-white/40 hover:text-white/60"
+            }`}
           >
             🔍 Check Location
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="input-group">
-            <label htmlFor="uniqueName">Your Unique Name</label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-white/50 text-sm block mb-1.5">Your Unique Name</label>
             <input
-              id="uniqueName"
               type="text"
               placeholder="e.g. JohnDoe"
               value={uniqueName}
               onChange={(e) => setUniqueName(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-all"
               required
               autoFocus
             />
           </div>
 
-          <div className="input-group">
-            <label htmlFor="pin">4-Digit Passcode</label>
+          <div>
+            <label className="text-white/50 text-sm block mb-1.5">4-Digit Passcode</label>
             <input
-              id="pin"
               type="password"
               inputMode="numeric"
               maxLength="4"
               placeholder="e.g. 1234"
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-all"
               required
             />
           </div>
 
-          {error && <div className="login-error">{error}</div>}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
 
-          <button type="submit" className="login-btn" disabled={loading}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold text-base hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {loading ? "Processing..." : activeTab === "register" ? "🔒 Start Tracking" : "📍 Show My Location"}
           </button>
 
-          <p className="login-hint">
+          <p className="text-center text-white/20 text-xs mt-2">
             {activeTab === "register"
-              ? "This will create a permanent ID for this device."
-              : "Enter the name and PIN you used when you first tracked this device."}
+              ? "This creates a permanent ID for this device"
+              : "Enter the name and PIN you used when you first tracked"}
           </p>
         </form>
       </div>

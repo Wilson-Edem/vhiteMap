@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+  
+  html, body, #root {
+    @apply h-full w-full overflow-hidden;
+  }
+  
+  body {
+    @apply bg-dark font-sans antialiased;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply backdrop-blur-xl bg-black/60 border border-white/10;
+  }
+  
+  .glass-light {
+    @apply backdrop-blur-xl bg-white/10 border border-white/20;
+  }
+  
+  .leaflet-container {
+    @apply bg-dark !important;
+  }
+  
+  .leaflet-control-zoom {
+    @apply hidden !important;
+  }
+  
+  .leaflet-attribution-flag {
+    @apply hidden !important;
+  }
+  
+  .leaflet-control-attribution {
+    @apply text-white/30 text-[10px] !important;
+    background: transparent !important;
+  }
+}
