@@ -90,7 +90,7 @@ const LiveMap = ({
   const tileConfig = MAP_TILES[mapMode] || MAP_TILES.standard;
 
   return (
-<<<<<<< HEAD
+
     <MapContainer
       center={[lat, lng]}
       zoom={18}
@@ -120,7 +120,7 @@ const LiveMap = ({
       <Marker position={[lat, lng]} icon={markerIcon} />
       <FlyToLocation position={position} />
     </MapContainer>
-=======
+
    <div style={{ height: "460px", width: "100%" }}>
   <MapContainer
     center={[lat, lng]}
@@ -147,7 +147,7 @@ const LiveMap = ({
         <FlyToLocation position={position} />
       </MapContainer>
     </div>
->>>>>>> caa9fa635739cc5f5de1000bf83f6b4342ad22d8
+
   );
 };
 
