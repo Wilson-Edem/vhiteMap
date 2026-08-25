@@ -90,6 +90,7 @@ const LiveMap = ({
   const tileConfig = MAP_TILES[mapMode] || MAP_TILES.standard;
 
   return (
+<<<<<<< HEAD
     <MapContainer
       center={[lat, lng]}
       zoom={18}
@@ -119,6 +120,34 @@ const LiveMap = ({
       <Marker position={[lat, lng]} icon={markerIcon} />
       <FlyToLocation position={position} />
     </MapContainer>
+=======
+   <div style={{ height: "460px", width: "100%" }}>
+  <MapContainer
+    center={[lat, lng]}
+    zoom={18}
+    style={{ height: "460px", width: "100%" }}
+    zoomControl={false}
+    attributionControl={false}
+  >
+        <TileLayer
+  url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; CartoDB'
+/>
+        {/* 🧭 Trail Polyline */}
+        {trail.length > 0 && (
+          <Polyline
+            positions={trail.map((p) => [p.lat, p.lng])}
+            color={trailColor}
+            weight={4}
+            opacity={0.8}
+            dashArray={null}
+          />
+        )}
+        <Marker position={[lat, lng]} icon={markerIcon} ref={markerRef} />
+        <FlyToLocation position={position} />
+      </MapContainer>
+    </div>
+>>>>>>> caa9fa635739cc5f5de1000bf83f6b4342ad22d8
   );
 };
 

@@ -34,14 +34,11 @@ export const useGeolocation = (tracking, batterySaver = false) => {
       console.warn("Geolocation error:", err.message);
       setError(err.message);
     };
-
-    // 🧠 Battery Saver Logic
-    const options = {
-      enableHighAccuracy: !batterySaver, // If saver is ON, disable high accuracy (uses less GPS power)
-      timeout: batterySaver ? 20000 : 10000,
-      maximumAge: batterySaver ? 15000 : 3000, // Update every 15s in saver mode, 3s normally
-    };
-
+const options = {
+  enableHighAccuracy: !batterySaver,
+  timeout: batterySaver ? 30000 : 15000,
+  maximumAge: batterySaver ? 15000 : 5000,
+};
     watchIdRef.current = navigator.geolocation.watchPosition(
       handleSuccess,
       handleError,

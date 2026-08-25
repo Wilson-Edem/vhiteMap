@@ -20,4 +20,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       </SettingsProvider>
     </ThemeProvider>
   </React.StrictMode>
+<<<<<<< HEAD
 );
+=======
+);
+>>>>>>> caa9fa635739cc5f5de1000bf83f6b4342ad22d8
