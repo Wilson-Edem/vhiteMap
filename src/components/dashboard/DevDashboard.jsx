@@ -118,6 +118,7 @@ const DevDashboard = () => {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-dark">
+      {/* Map background */}
       <div className="absolute inset-0 z-0">
         {selectedUser?.lastLocation ? (
           <LiveMap
@@ -131,24 +132,24 @@ const DevDashboard = () => {
           <div className="flex items-center justify-center h-full bg-dark/90 text-white/40">
             <div className="text-center">
               <div className="text-5xl mb-4">👈</div>
-              <p className="text-lg">Select a user from the sidebar</p>
-              <p className="text-sm text-white/20 mt-1">to view their location and trail</p>
+              <p className="text-lg">Select a user</p>
             </div>
           </div>
         )}
       </div>
 
+      {/* Hamburger menu */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="md:hidden fixed top-4 left-4 z-30 p-2.5 rounded-xl glass text-white text-xl hover:bg-white/10 transition-all"
-        aria-label="Toggle user list"
+        className="md:hidden fixed top-4 left-4 z-30 p-2.5 rounded-xl glass text-white text-lg hover:bg-white/10 transition-all"
       >
         ☰
       </button>
 
+      {/* Sidebar */}
       <div
         className={`
-          fixed top-0 left-0 h-full w-72 z-20 
+          fixed top-0 left-0 h-full w-64 z-20 
           glass rounded-r-2xl 
           transform transition-transform duration-300 ease-in-out
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -162,28 +163,28 @@ const DevDashboard = () => {
           borderRight: '1px solid rgba(255,255,255,0.05)'
         }}
       >
-        <div className="p-4 border-b border-white/5 flex-shrink-0 flex justify-between items-center">
-          <h3 className="text-white font-bold text-sm flex items-center gap-2">
-            <span>👥</span> Users <span className="text-white/40 text-xs font-normal">({users.length})</span>
+        <div className="p-3 border-b border-white/5 flex-shrink-0 flex justify-between items-center">
+          <h3 className="text-white text-sm font-bold">
+            👥 Users ({users.length})
           </h3>
           <button
             onClick={() => setIsSidebarOpen(false)}
-            className="md:hidden text-white/40 hover:text-white/80 text-xl"
+            className="md:hidden text-white/40 hover:text-white/80 text-lg"
           >
             ✕
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-white/10">
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {users.length === 0 ? (
-            <p className="text-white/30 text-sm text-center py-8">No users registered</p>
+            <p className="text-white/30 text-sm text-center py-8">No users</p>
           ) : (
             users.map((user) => (
               <button
                 key={user.deviceUID}
                 onClick={() => handleSelectUser(user)}
                 className={`
-                  w-full text-left px-3 py-2.5 rounded-xl transition-all text-sm 
+                  w-full text-left px-3 py-2 rounded-xl transition-all text-sm 
                   flex items-center justify-between
                   ${selectedUser?.deviceUID === user.deviceUID 
                     ? 'bg-white/15 text-white' 
@@ -192,7 +193,7 @@ const DevDashboard = () => {
                 `}
               >
                 <div className="flex flex-col overflow-hidden">
-                  <span className="font-medium truncate">{user.uniqueName}</span>
+                  <span className="font-medium truncate text-xs">{user.uniqueName}</span>
                   <span className="text-[10px] text-white/30 truncate">
                     {user.isOnline ? '🟢 Online' : `⚪ ${user.lastSeenText}`}
                   </span>
@@ -206,49 +207,51 @@ const DevDashboard = () => {
         </div>
       </div>
 
+      {/* Bottom bar - compact */}
       {selectedUser && (
-        <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none">
-          <div className="glass rounded-2xl p-3 md:p-4 pointer-events-auto flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-3">
-              <span className="text-white font-bold text-sm md:text-base">
+        <div className="absolute bottom-3 left-3 right-3 z-20 pointer-events-none">
+          <div className="glass rounded-xl p-2.5 pointer-events-auto flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-white font-bold text-sm truncate max-w-[100px]">
                 {selectedUser.uniqueName}
               </span>
-              <span className="text-white/40 text-xs">
+              <span className="text-white/40 text-[10px]">
                 {selectedUser.isOnline ? '🟢 Online' : `⚪ ${selectedUser.lastSeenText}`}
               </span>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setMapMode(m => m === 'standard' ? 'satellite' : 'standard')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all ${
                   mapMode === 'satellite'
                     ? 'bg-blue-500 text-white'
                     : 'bg-white/10 text-white/70 hover:bg-white/20'
                 }`}
               >
-                {mapMode === 'satellite' ? '🛰️ Satellite' : '🗺️ Map'}
+                {mapMode === 'satellite' ? '🛰️' : '🗺️'}
               </button>
               <button
                 onClick={() => openEditModal(selectedUser)}
-                className="px-3 py-1.5 rounded-xl text-xs font-medium bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-all"
+                className="px-2.5 py-1 rounded-lg text-[10px] font-medium bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-all"
               >
-                ✏️ Edit
+                ✏️
               </button>
               <button
                 onClick={() => handleDeleteUser(selectedUser)}
-                className="px-3 py-1.5 rounded-xl text-xs font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all"
+                className="px-2.5 py-1 rounded-lg text-[10px] font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all"
               >
-                🗑️ Delete
+                🗑️
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Edit Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setIsEditModalOpen(false)}>
-          <div className="glass rounded-2xl p-6 md:p-8 max-w-md w-full pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-white text-xl font-bold mb-4">✏️ Edit User</h3>
+          <div className="glass rounded-2xl p-6 max-w-md w-full pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-white text-lg font-bold mb-4">✏️ Edit User</h3>
             <div className="space-y-4">
               <div>
                 <label className="text-white/60 text-sm block mb-1.5">Unique Name</label>
@@ -256,7 +259,7 @@ const DevDashboard = () => {
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-all"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm"
                   placeholder="Enter name"
                 />
               </div>
@@ -268,7 +271,7 @@ const DevDashboard = () => {
                   inputMode="numeric"
                   value={editPin}
                   onChange={(e) => setEditPin(e.target.value.replace(/\D/g, ""))}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-all"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm"
                   placeholder="1234"
                 />
               </div>
