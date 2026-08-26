@@ -8,15 +8,13 @@ import { db } from "../../firebase/config";
 import { doc, updateDoc, collection, addDoc } from "firebase/firestore";
 
 const StatCard = ({ icon, label, value, subValue }) => (
-  <div className="glass rounded-2xl p-4 md:p-5 flex-1 min-w-[80px]">
-    <div className="flex items-center gap-2 text-white/50 text-xs md:text-sm font-medium mb-1">
-      <span>{icon}</span>
-      <span>{label}</span>
-    </div>
-    <div className="text-white text-xl md:text-2xl font-bold tracking-tight">
+  <div className="glass rounded-xl p-3 flex-1 min-w-[70px] text-center">
+    <div className="text-white/50 text-[10px] uppercase tracking-wider font-medium mb-0.5">{label}</div>
+    <div className="text-white text-lg md:text-xl font-bold tracking-tight">
       {value}
-      {subValue && <span className="text-white/40 text-sm font-normal ml-1">{subValue}</span>}
+      {subValue && <span className="text-white/40 text-xs font-normal ml-0.5">{subValue}</span>}
     </div>
+    <div className="text-white/20 text-[10px] mt-0.5">{icon}</div>
   </div>
 );
 
@@ -111,6 +109,7 @@ const UserDashboard = () => {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-dark">
+      {/* Map - full‑screen background */}
       <div className="absolute inset-0 z-0">
         <LiveMap 
           position={position} 
@@ -121,41 +120,62 @@ const UserDashboard = () => {
         />
       </div>
 
-      <div className="absolute top-0 left-0 right-0 z-20 p-3 md:p-4 pointer-events-none">
-        <div className="glass rounded-2xl p-3 md:p-4 pointer-events-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-white font-bold text-lg md:text-xl tracking-tight">Vhitemaps</span>
-              <span className="text-white/40 text-xs hidden sm:inline">{user?.uniqueName}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-white/60 text-xs md:text-sm">{tracking ? '🟢 Live' : '🔴 Paused'}</span>
-            </div>
+      {/* Top bar - minimal */}
+      <div className="absolute top-0 left-0 right-0 z-20 p-3 pointer-events-none">
+        <div className="glass rounded-xl px-4 py-2 pointer-events-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-white font-bold text-sm">🌍 Vhitemaps</span>
+            <span className="text-white/30 text-xs hidden sm:inline">{user?.uniqueName}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-white/50 text-xs">{tracking ? '🟢 Live' : '🔴 Paused'}</span>
           </div>
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 z-20 p-3 md:p-4 pointer-events-none">
-        <div className="pointer-events-auto space-y-3">
-          <div className="flex gap-2 md:gap-3 overflow-x-auto pb-1 scrollbar-hide">
+      {/* Bottom controls - compact and fluid */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 p-3 pointer-events-none">
+        <div className="pointer-events-auto space-y-2">
+          {/* Stats row - compact */}
+          <div className="flex gap-2">
             <StatCard icon="📏" label="Distance" value={totalDistance > 1000 ? distanceKm : distanceM} subValue={totalDistance > 1000 ? 'km' : 'm'} />
             <StatCard icon="🏃" label="Speed" value={speed.toFixed(1)} subValue="km/h" />
-            <StatCard icon="🎯" label="Accuracy" value={position?.accuracy?.toFixed(0) || '...'} subValue="m" />
+            <StatCard icon="🎯" label="Acc." value={position?.accuracy?.toFixed(0) || '...'} subValue="m" />
             <StatCard icon="🧭" label="Heading" value={position?.heading?.toFixed(0) || '0'} subValue="°" />
           </div>
 
-          <div className="glass rounded-2xl p-3 md:p-4 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <button onClick={() => setMapMode(m => m === 'standard' ? 'satellite' : 'standard')} className={`px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-medium transition-all ${mapMode === 'satellite' ? 'bg-blue-500 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'}`}>
-                {mapMode === 'satellite' ? '🛰️ Satellite' : '🗺️ Map'}
+          {/* Controls - compact */}
+          <div className="glass rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <button 
+                onClick={() => setMapMode(m => m === 'standard' ? 'satellite' : 'standard')} 
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  mapMode === 'satellite' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-white/10 text-white/70 hover:bg-white/20'
+                }`}
+              >
+                {mapMode === 'satellite' ? '🛰️' : '🗺️'}
               </button>
-              <button onClick={toggleShowTrail} className={`px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-medium transition-all ${showTrail ? 'bg-emerald-500/30 text-emerald-400 border border-emerald-500/30' : 'bg-white/10 text-white/50 hover:bg-white/20'}`}>
-                {showTrail ? '📍 Trail ON' : '📍 Trail OFF'}
+              <button 
+                onClick={toggleShowTrail} 
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  showTrail 
+                    ? 'bg-emerald-500/30 text-emerald-400' 
+                    : 'bg-white/10 text-white/50 hover:bg-white/20'
+                }`}
+              >
+                {showTrail ? '📍 ON' : '📍 OFF'}
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-white/40 text-[10px] md:text-xs">{batterySaver ? '🔋 Saver' : '⚡ Live'}</span>
-              <button onClick={handleClearHistory} className="px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all">🗑️ Clear</button>
+              <span className="text-white/40 text-[10px]">{batterySaver ? '🔋' : '⚡'}</span>
+              <button 
+                onClick={handleClearHistory} 
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all"
+              >
+                🗑️
+              </button>
             </div>
           </div>
         </div>
