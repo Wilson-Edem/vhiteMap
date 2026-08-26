@@ -12,17 +12,48 @@ export const useFetchUsers = () => {
       collection(db, "devices"),
       (snapshot) => {
         const userList = [];
+        const now = Date.now();
+
         snapshot.forEach((doc) => {
           const data = doc.data();
+          const lastLocation = data.lastLocation || null;
+
+          // --- Calculate online status (active within 30 seconds) ---
+          let isOnline = false;
+          let lastSeenText = "Never";
+
+          if (lastLocation && lastLocation.timestamp) {
+            const lastTime = new Date(lastLocation.timestamp).getTime();
+            const diffSeconds = (now - lastTime) / 1000;
+            isOnline = diffSeconds < 30;
+
+            // --- Calculate human‑readable "last active" text ---
+            if (diffSeconds < 60) {
+              lastSeenText = "Just now";
+            } else if (diffSeconds < 3600) {
+              const mins = Math.floor(diffSeconds / 60);
+              lastSeenText = `${mins}m ago`;
+            } else if (diffSeconds < 86400) {
+              const hrs = Math.floor(diffSeconds / 3600);
+              lastSeenText = `${hrs}h ago`;
+            } else {
+              const days = Math.floor(diffSeconds / 86400);
+              lastSeenText = `${days}d ago`;
+            }
+          }
+
           userList.push({
             deviceUID: doc.id,
             uniqueName: data.uniqueName,
             pin: data.pin,
             fingerprint: data.fingerprint || "N/A",
             createdAt: data.createdAt || "Unknown",
-            lastLocation: data.lastLocation || null, // { lat, lng, heading, timestamp }
+            lastLocation: lastLocation,
+            isOnline: isOnline,          // new: boolean, true/false
+            lastSeenText: lastSeenText,  // new: human‑readable text
           });
         });
+
         setUsers(userList);
         setLoading(false);
       },
@@ -35,6 +66,9 @@ export const useFetchUsers = () => {
 
     return () => unsubscribe();
   }, []);
+
+  return { users, loading, error };
+};  }, []);
 
   return { users, loading, error };
 };
