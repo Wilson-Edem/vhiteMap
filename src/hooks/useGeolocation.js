@@ -1,40 +1,87 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
-export const useGeolocation = (tracking, batterySaver = false) => {
+export const useGeolocation = (enabled, batterySaver = false) => {
   const [position, setPosition] = useState(null);
   const [error, setError] = useState(null);
   const watchIdRef = useRef(null);
 
-  useEffect(() => {
+  const handleSuccess = useCallback((pos) => {
+    const { latitude, longitude, heading, speed, accuracy } = pos.coords;
+    setPosition({
+      lat: latitude,
+      lng: longitude,
+      heading: heading || 0,
+      speed: speed || 0,
+      accuracy: accuracy || 0,
+    });
+    setError(null);
+  }, []);
+
+  const handleError = useCallback((err) => {
+    setError(err.message);
+  }, []);
+
+  const startWatching = useCallback(() => {
+    if (!navigator.geolocation) {
+      setError("Geolocation not supported");
+      return;
+    }
+
+    const options = {
+      enableHighAccuracy: !batterySaver,
+      timeout: batterySaver ? 30000 : 10000,
+      maximumAge: batterySaver ? 60000 : 0,
+    };
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      handleSuccess,
+      handleError,
+      options
+    );
+  }, [batterySaver, handleSuccess, handleError]);
+
+  const stopWatching = useCallback(() => {
     if (watchIdRef.current) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
+  }, []);
 
-    if (!tracking) return;
+  // --- Page visibility: fast resume when tab becomes visible ---
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && enabled) {
+        // If we're already watching, stop and restart to get a fresh fix quickly
+        if (watchIdRef.current) {
+          stopWatching();
+          startWatching();
+        } else {
+          // If not watching but should be, start it
+          startWatching();
+        }
+      }
+    };
 
-    if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser.");
-      return;
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [enabled, startWatching, stopWatching]);
+
+  useEffect(() => {
+    if (enabled) {
+      startWatching();
+    } else {
+      stopWatching();
     }
 
-    const handleSuccess = (pos) => {
-      const { latitude, longitude, heading, speed, accuracy } = pos.coords;
-      setPosition({
-        lat: latitude,
-        lng: longitude,
-        heading: heading || 0,
-        speed: speed || 0,
-        accuracy: accuracy || 0,
-      });
-      setError(null);
+    return () => {
+      stopWatching();
     };
+  }, [enabled, startWatching, stopWatching]);
 
-    const handleError = (err) => {
-      console.warn("Geolocation error:", err.message);
-      setError(err.message);
-    };
-const options = {
+  return { position, error };
+};const options = {
   enableHighAccuracy: !batterySaver,
   timeout: batterySaver ? 30000 : 15000,
   maximumAge: batterySaver ? 15000 : 5000,
