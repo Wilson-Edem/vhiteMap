@@ -1,40 +1,144 @@
-import React, { useState, useEffect } from "react";
-import { db } from "../../firebase/config";
-import { doc, updateDoc, deleteDoc, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import React, { useState } from "react";
+import { useAdmin } from "../../contexts/AdminContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { useFetchUsers } from "../../hooks/useFetchUsers";
 import LiveMap from "../map/LiveMap";
 
 const DevDashboard = () => {
+  const { user } = useAuth();
   const { users, loading, error } = useFetchUsers();
   const [selectedUser, setSelectedUser] = useState(null);
-  const [editingUser, setEditingUser] = useState(null);
-  const [editName, setEditName] = useState("");
-  const [editPin, setEditPin] = useState("");
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [userTrail, setUserTrail] = useState([]);
-  const [mapMode, setMapMode] = useState('standard');
+  const [mapMode, setMapMode] = useState("standard");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // 获取选中用户的轨迹
-  useEffect(() => {
-    if (!selectedUser) {
-      setUserTrail([]);
-      return;
-    }
-    const fetchTrail = async () => {
-      try {
-        const trailRef = collection(db, "devices", selectedUser.deviceUID, "trail");
-        const q = query(trailRef, orderBy("timestamp", "desc"), limit(200));
-        const snapshot = await getDocs(q);
-        const points = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          points.push({ lat: data.lat, lng: data.lng });
-        });
-        setUserTrail(points.reverse());
-      } catch (err) {
-        console.warn("Failed to fetch trail:", err);
-        setUserTrail([]);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full bg-dark text-white/60">
+        <div className="text-center">
+          <div className="text-3xl mb-2 animate-spin">⏳</div>
+          <p>Loading user data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full bg-dark text-red-400">
+        <div className="text-center">
+          <p className="text-lg font-medium">Error loading users</p>
+          <p className="text-sm text-white/50">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedUserData = users.find((u) => u.deviceUID === selectedUser);
+  const position = selectedUserData?.lastLocation || null;
+
+  return (
+    <div className="relative h-screen w-screen overflow-hidden bg-dark">
+      {/* Map - full‑screen background */}
+      <div className="absolute inset-0 z-0">
+        <LiveMap
+          position={position}
+          error={null}
+          isDevView={true}
+          trail={[]}
+          mapMode={mapMode}
+        />
+      </div>
+
+      {/* Top bar */}
+      <div className="absolute top-0 left-0 right-0 z-20 p-3 md:p-4 pointer-events-none">
+        <div className="glass rounded-2xl p-3 md:p-4 pointer-events-auto">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {/* Hamburger button - visible on mobile */}
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="md:hidden text-white text-2xl focus:outline-none"
+              >
+                ☰
+              </button>
+              <span className="text-white font-bold text-lg md:text-xl tracking-tight">
+                Vhitemaps · Admin
+              </span>
+              <span className="text-white/40 text-xs hidden sm:inline">
+                {user?.uniqueName}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() =>
+                  setMapMode((m) => (m === "standard" ? "satellite" : "standard"))
+                }
+                className="px-3 py-1.5 rounded-xl text-xs font-medium bg-white/10 text-white/70 hover:bg-white/20 transition-all"
+              >
+                {mapMode === "satellite" ? "🛰️ Satellite" : "🗺️ Map"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* User list panel - slides in from bottom on mobile */}
+      <div
+        className={`absolute bottom-0 left-0 right-0 z-20 p-3 md:p-4 pointer-events-none transition-transform duration-300 ${
+          isSidebarOpen ? "translate-y-0" : "translate-y-full md:translate-y-0"
+        }`}
+      >
+        <div className="glass rounded-2xl p-3 md:p-4 pointer-events-auto max-h-[40vh] overflow-y-auto">
+          <div className="flex flex-wrap gap-2">
+            {users.map((u) => (
+              <button
+                key={u.deviceUID}
+                onClick={() => {
+                  setSelectedUser(u.deviceUID);
+                  setIsSidebarOpen(false); // auto‑close on mobile after selection
+                }}
+                className={`px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-sm font-medium transition-all flex items-center gap-2 ${
+                  selectedUser === u.deviceUID
+                    ? "bg-blue-500/40 text-white border border-blue-400/50"
+                    : "bg-white/5 text-white/60 hover:bg-white/10"
+                }`}
+              >
+                <span>{u.uniqueName}</span>
+                {/* Online status dot */}
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${
+                    u.isOnline ? "bg-green-400" : "bg-gray-500"
+                  }`}
+                />
+                <span className="text-[10px] text-white/40">
+                  {u.lastSeenText}
+                </span>
+              </button>
+            ))}
+            {users.length === 0 && (
+              <p className="text-white/40 text-sm">No users registered yet.</p>
+            )}
+          </div>
+          {selectedUserData && (
+            <div className="mt-3 pt-3 border-t border-white/10 text-white/50 text-xs flex flex-wrap gap-3">
+              <span>UID: {selectedUserData.deviceUID}</span>
+              <span>
+                Last update:{" "}
+                {selectedUserData.lastLocation?.timestamp
+                  ? new Date(
+                      selectedUserData.lastLocation.timestamp
+                    ).toLocaleString()
+                  : "Never"}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DevDashboard;        setUserTrail([]);
       }
     };
     fetchTrail();
