@@ -9,8 +9,8 @@ export const isRunningInNativeApp = () => {
 
 /**
  * Send a message to the native app (React Native WebView)
- * @param {string} type - Message type (e.g., 'SET_DEVICE_UID', 'START_TRACKING')
- * @param {object} data - Additional data to send
+ * @param {string} type - Message type
+ * @param {object} data - Additional data
  */
 export const sendToNative = (type, data = {}) => {
   if (isRunningInNativeApp() && window.ReactNativeWebView) {
@@ -21,23 +21,14 @@ export const sendToNative = (type, data = {}) => {
   }
 };
 
-/**
- * Notify the native app to set the device UID (after login)
- */
 export const notifyDeviceUID = (deviceUID) => {
   sendToNative('SET_DEVICE_UID', { deviceUID });
 };
 
-/**
- * Notify the native app to start background tracking
- */
 export const notifyStartTracking = () => {
   sendToNative('START_TRACKING');
 };
 
-/**
- * Notify the native app to stop background tracking
- */
 export const notifyStopTracking = () => {
   sendToNative('STOP_TRACKING');
 };
