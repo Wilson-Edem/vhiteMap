@@ -1,79 +1,83 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 
-export const useGeolocation = (enabled, batterySaver = false) => {
+export const useGeolocation = (tracking, batterySaver = false) => {
   const [position, setPosition] = useState(null);
   const [error, setError] = useState(null);
   const watchIdRef = useRef(null);
 
-  const handleSuccess = useCallback((pos) => {
-    const { latitude, longitude, heading, speed, accuracy } = pos.coords;
-    setPosition({
-      lat: latitude,
-      lng: longitude,
-      heading: heading || 0,
-      speed: speed || 0,
-      accuracy: accuracy || 0,
-    });
-    setError(null);
-  }, []);
+  // Check if running inside the native app (React Native WebView)
+  const isNativeApp = typeof window !== 'undefined' && typeof window.ReactNativeWebView !== 'undefined';
 
-  const handleError = useCallback((err) => {
-    setError(err.message);
-  }, []);
-
-  const startWatching = useCallback(() => {
-    if (!navigator.geolocation) {
-      setError("Geolocation not supported");
+  // Start watching GPS (web only)
+  const startWatching = () => {
+    // If running inside native app, skip GPS — native layer handles it
+    if (isNativeApp) {
+      console.log('📱 Native app handles GPS. Web GPS disabled.');
+      setError(null);
       return;
     }
+
+    // Check if geolocation is available in the browser
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    // Configure GPS options
     const options = {
       enableHighAccuracy: !batterySaver,
       timeout: batterySaver ? 30000 : 15000,
       maximumAge: batterySaver ? 15000 : 5000,
     };
+
+    // Start watching position
     watchIdRef.current = navigator.geolocation.watchPosition(
-      handleSuccess,
-      handleError,
+      (pos) => {
+        const { latitude, longitude, heading, speed, accuracy } = pos.coords;
+        setPosition({
+          lat: latitude,
+          lng: longitude,
+          heading: heading || 0,
+          speed: speed || 0,
+          accuracy: accuracy || 0,
+        });
+        setError(null);
+      },
+      (err) => {
+        console.warn("Geolocation error:", err.message);
+        setError(err.message);
+      },
       options
     );
-  }, [batterySaver, handleSuccess, handleError]);
+  };
 
-  const stopWatching = useCallback(() => {
+  // Stop watching GPS (web only)
+  const stopWatching = () => {
     if (watchIdRef.current) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
-  }, []);
+  };
 
-  // --- Page visibility: fast resume when tab becomes visible ---
+  // Effect to start/stop tracking
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && enabled) {
-        // Restart watching to get a fresh fix quickly
-        if (watchIdRef.current) {
-          stopWatching();
-          startWatching();
-        } else {
-          startWatching();
-        }
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [enabled, startWatching, stopWatching]);
+    // If running in native app, skip GPS and clear any errors
+    if (isNativeApp) {
+      setError(null);
+      return;
+    }
 
-  useEffect(() => {
-    if (enabled) {
+    if (tracking) {
       startWatching();
     } else {
       stopWatching();
     }
+
+    // Cleanup on unmount
     return () => {
       stopWatching();
     };
-  }, [enabled, startWatching, stopWatching]);
+  }, [tracking, batterySaver, isNativeApp]);
 
   return { position, error };
 };
