@@ -1,14 +1,26 @@
-import React from "react";
+// src/App.jsx
+import React, { useEffect } from "react";
 import { useAuth } from "./contexts/AuthContext";
 import { useAdmin } from "./contexts/AdminContext";
 import LoginModal from "./components/auth/LoginModal";
 import Navbar from "./components/common/Navbar";
 import UserDashboard from "./components/dashboard/UserDashboard";
 import DevDashboard from "./components/dashboard/DevDashboard";
+import { isRunningInNativeApp } from "./utils/nativeBridge";
 
 function App() {
   const { user, isLoading } = useAuth();
   const { isDevMode } = useAdmin();
+
+  useEffect(() => {
+    if (isRunningInNativeApp()) {
+      console.log("📱 Running inside Vhitemap Native App");
+      window.isRunningInNativeApp = true;
+    } else {
+      console.log("🌐 Running in web browser");
+      window.isRunningInNativeApp = false;
+    }
+  }, []);
 
   if (isLoading) {
     return (
