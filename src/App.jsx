@@ -6,12 +6,14 @@ import LoginModal from "./components/auth/LoginModal";
 import Navbar from "./components/common/Navbar";
 import UserDashboard from "./components/dashboard/UserDashboard";
 import DevDashboard from "./components/dashboard/DevDashboard";
+import DownloadPopup from "./components/common/DownloadPopup";
 import { isRunningInNativeApp } from "./utils/nativeBridge";
 
 function App() {
   const { user, isLoading } = useAuth();
   const { isDevMode } = useAdmin();
 
+  // Detect if running inside native app (for console logging)
   useEffect(() => {
     if (isRunningInNativeApp()) {
       console.log("📱 Running inside Vhitemap Native App");
@@ -41,6 +43,9 @@ function App() {
     <div className="h-screen w-screen overflow-hidden bg-dark">
       <Navbar />
       {isDevMode ? <DevDashboard /> : <UserDashboard />}
+      
+      {/* Download popup — only shown on mobile web (not inside native app) */}
+      <DownloadPopup />
     </div>
   );
 }
