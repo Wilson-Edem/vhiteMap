@@ -1,17 +1,9 @@
 // src/utils/nativeBridge.js
 
-/**
- * Check if the app is running inside a React Native WebView
- */
 export const isRunningInNativeApp = () => {
   return typeof window !== 'undefined' && typeof window.ReactNativeWebView !== 'undefined';
 };
 
-/**
- * Send a message to the native app (React Native WebView)
- * @param {string} type - Message type
- * @param {object} data - Additional data
- */
 export const sendToNative = (type, data = {}) => {
   if (isRunningInNativeApp() && window.ReactNativeWebView) {
     window.ReactNativeWebView.postMessage(JSON.stringify({ type, ...data }));
