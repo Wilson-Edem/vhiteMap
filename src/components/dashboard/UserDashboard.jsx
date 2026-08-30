@@ -1,4 +1,3 @@
-// src/components/dashboard/UserDashboard.jsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSettings } from "../../contexts/SettingsContext";
@@ -6,8 +5,7 @@ import { useGeolocation } from "../../hooks/useGeolocation";
 import { haversineDistance } from "../../utils/haversine";
 import LiveMap from "../map/LiveMap";
 import { db } from "../../firebase/config";
-import { doc, updateDoc, collection, addDoc } from "firebase/firestore";
-import { notifyStartTracking, notifyStopTracking } from "../../utils/nativeBridge";
+import { doc, onSnapshot } from "firebase/firestore";
 
 const StatCard = ({ icon, label, value, subValue }) => (
   <div className="glass rounded-2xl p-4 md:p-5 flex-1 min-w-[80px]">
@@ -23,67 +21,64 @@ const StatCard = ({ icon, label, value, subValue }) => (
 );
 
 const UserDashboard = () => {
-  const { user, tracking, setTracking } = useAuth();
+  const { user, tracking } = useAuth();
   const { batterySaver, showTrail, toggleShowTrail } = useSettings();
-  const { position, error } = useGeolocation(tracking, batterySaver);
+  
+  // Web GPS (for standalone browser mode)
+  const { position: webPosition, error: webError } = useGeolocation(tracking, batterySaver);
+  
   const prevPositionRef = useRef(null);
   const [totalDistance, setTotalDistance] = useState(0);
   const [speed, setSpeed] = useState(0);
   const [trail, setTrail] = useState([]);
   const [mapMode, setMapMode] = useState('standard');
-  const saveTrailTimeoutRef = useRef(null);
+  
+  // 👇 NEW: Firebase location state (for native app / WebView mode)
+  const [firebaseLocation, setFirebaseLocation] = useState(null);
+  const [firebaseError, setFirebaseError] = useState(null);
 
-  // 👇 Notify native app when tracking state changes
+  // Check if running inside native app
+  const isNativeApp = typeof window !== 'undefined' && typeof window.ReactNativeWebView !== 'undefined';
+
+  // 👇 NEW: Listen to Firebase for location updates (for WebView / Native App mode)
   useEffect(() => {
-    if (tracking) {
-      notifyStartTracking();
-    } else {
-      notifyStopTracking();
-    }
-  }, [tracking]);
-
-  const saveLocationToFirebase = useCallback(async (pos) => {
     if (!user) return;
-    try {
-      const userRef = doc(db, "devices", user.deviceUID);
-      await updateDoc(userRef, {
-        lastLocation: {
-          lat: pos.lat,
-          lng: pos.lng,
-          heading: pos.heading || 0,
-          timestamp: new Date().toISOString(),
-        },
-      });
-      const trailRef = collection(userRef, "trail");
-      await addDoc(trailRef, {
-        lat: pos.lat,
-        lng: pos.lng,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.warn("Failed to save location:", err);
-    }
+
+    const userRef = doc(db, "devices", user.deviceUID);
+
+    const unsubscribe = onSnapshot(userRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.lastLocation) {
+          const loc = data.lastLocation;
+          console.log(`📍 Firebase location update: ${loc.lat}, ${loc.lng}`);
+          setFirebaseLocation({
+            lat: loc.lat,
+            lng: loc.lng,
+            heading: loc.heading || 0,
+            accuracy: 0, // Accuracy from Firebase is not available
+          });
+          setFirebaseError(null);
+        }
+      }
+    }, (err) => {
+      console.warn("Firebase location listener error:", err);
+      setFirebaseError(err.message);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
-  const debouncedSaveTrail = useCallback((pos) => {
-    if (saveTrailTimeoutRef.current) clearTimeout(saveTrailTimeoutRef.current);
-    saveTrailTimeoutRef.current = setTimeout(() => {
-      saveLocationToFirebase(pos);
-    }, 5000);
-  }, [saveLocationToFirebase]);
+  // 👇 DECIDE which location source to use
+  // If running in native app (WebView), use Firebase location
+  // If running in standalone browser, use web GPS
+  const position = isNativeApp ? firebaseLocation : webPosition;
+  const error = isNativeApp ? firebaseError : webError;
 
+  // 👇 Distance and speed calculations (runs when position changes)
   useEffect(() => {
     if (!position) return;
-    setTrail(prev => {
-      const newTrail = [...prev, { lat: position.lat, lng: position.lng }];
-      if (newTrail.length > 500) return newTrail.slice(-500);
-      return newTrail;
-    });
-    debouncedSaveTrail(position);
-  }, [position, debouncedSaveTrail]);
 
-  useEffect(() => {
-    if (!position) return;
     const today = new Date().toDateString();
     const saved = localStorage.getItem("dailyDistance");
     if (saved) {
@@ -91,7 +86,9 @@ const UserDashboard = () => {
       if (parsed.date === today) setTotalDistance(parsed.distance || 0);
       else { setTotalDistance(0); localStorage.removeItem("dailyDistance"); }
     }
+
     if (position.speed !== undefined) setSpeed(position.speed * 3.6);
+
     if (prevPositionRef.current) {
       const prev = prevPositionRef.current;
       const dist = haversineDistance(prev.lat, prev.lng, position.lat, position.lng);
@@ -106,14 +103,23 @@ const UserDashboard = () => {
     prevPositionRef.current = { lat: position.lat, lng: position.lng };
   }, [position]);
 
+  // 👇 Trail state (for display)
+  // Note: Trail is still stored in Firebase, but we read it separately in the map component
+  // For now, we'll keep the trail state for display purposes
+  useEffect(() => {
+    if (!position) return;
+    setTrail(prev => {
+      const newTrail = [...prev, { lat: position.lat, lng: position.lng }];
+      if (newTrail.length > 500) return newTrail.slice(-500);
+      return newTrail;
+    });
+  }, [position]);
+
   const handleClearHistory = () => {
     if (window.confirm("Reset today's distance counter and clear saved location?")) {
       setTotalDistance(0);
       localStorage.removeItem("dailyDistance");
-      if (user) {
-        const userRef = doc(db, "devices", user.deviceUID);
-        updateDoc(userRef, { lastLocation: null }).catch(console.warn);
-      }
+      // We don't clear Firebase data from web to avoid conflicts with native app
     }
   };
 
@@ -140,7 +146,9 @@ const UserDashboard = () => {
               <span className="text-white/40 text-xs hidden sm:inline">{user?.uniqueName}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-white/60 text-xs md:text-sm">{tracking ? '🟢 Live' : '🔴 Paused'}</span>
+              <span className="text-white/60 text-xs md:text-sm">
+                {tracking ? '🟢 Live' : '🔴 Paused'}
+              </span>
             </div>
           </div>
         </div>
