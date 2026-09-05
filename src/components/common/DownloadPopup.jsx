@@ -51,7 +51,7 @@ const DownloadPopup = () => {
               <div className="mt-6 space-y-3">
                 {/* Download Button */}
                 <a
-                  href="https://expo.dev/artifacts/eas/lZkXq-VOQ3ZS90EmD5tmbOIeFoqNobqpCx6COnFgDcg.apk"
+                  href="https://expo.dev/artifacts/eas/3FbfMHUAvc0hho1m1s01cGwZ3AbMR6Eilw_QDAfCy7M.apk"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full bg-purple-600 text-white py-3.5 rounded-xl font-semibold hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center gap-2"
