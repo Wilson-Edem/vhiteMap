@@ -1,10 +1,10 @@
-# 🌍 Vhitemaps
+# 🌍 Vhitemap
 
 ### Live Location Tracker — Made by vhite
 
-Vhitemaps is a **Progressive Web App (PWA)** that turns your browser into a real-time GPS tracker. It features automatic login, live map tracking with a rotating compass arrow, daily distance tracking, and a powerful **Developer Dashboard** for monitoring all registered users.
+Vhitemap is a **Progressive Web App (PWA)** that turns your browser into a real-time GPS tracker. It features automatic login, live map tracking with a rotating compass arrow, daily distance tracking, and a powerful **Developer Dashboard** for monitoring all registered users.
 
-![Vhitemaps Demo](https://vhitemap.vercel.app)
+![Vhitemap Demo](https://vhitemap.vercel.app)
 
 ---
 
@@ -46,7 +46,7 @@ Vhitemaps is a **Progressive Web App (PWA)** that turns your browser into a real
 
 ## 🚀 Live Demo
 
-**[View the live app →](https://vhitemap.vercel.app)** *(Replace with your actual Vercel URL)*
+**[View the live app →](https://vhitemap.vercel.app)** **
 
 ---
 
