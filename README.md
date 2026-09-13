@@ -4,7 +4,8 @@
 
 Vhitemap is a **Progressive Web App (PWA)** that turns your browser into a real-time GPS tracker. It features automatic login, live map tracking with a rotating compass arrow, daily distance tracking, and a powerful **Developer Dashboard** for monitoring all registered users.
 
-![Vhitemap Demo](https://vhitemap.vercel.app)
+**[Vhitemap Demo](https://vhitemap.vercel.app)** **
+
 
 ---
 
